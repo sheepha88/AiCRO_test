@@ -40,7 +40,7 @@ def NonTargetResponse_PD(dataframe , NonTargetResponse , NonTargetResponse_col ,
 
 
 
-# Non Target Response PD 검토 함수
+# Non Target Response CR 검토 함수
 # Status 중에서 하나라도 Unequivocal Progression 이면 출력
 # ex) NonTargetResponse_CR(df_NTL , "CR" , "NTRGRESP" , "Absent" , col_status=["TULSTAT_1" ,"TULSTAT_2" ,"TULSTAT_3" , "TULSTAT_4" , "TULSTAT_5"])
 def NonTargetResponse_CR(dataframe , NonTargetResponse , NonTargetResponse_col , Status_response , col_status  ):
