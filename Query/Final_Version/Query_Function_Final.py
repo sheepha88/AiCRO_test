@@ -6,6 +6,86 @@ import openpyxl
 warnings.filterwarnings("ignore")
 
 
+#Non Target Response PD 검토 함수
+# Status 중에서 하나라도 Unequivocal Progression 이면 출력
+# ex) NonTargetResponse(df_NTL , "PD" , "NTRGRESP" , "Unequivocal Progression" , col_status=["TULSTAT_1" ,"TULSTAT_2" ,"TULSTAT_3" , "TULSTAT_4" , "TULSTAT_5"])
+def NonTargetResponse_PD(dataframe , NonTargetResponse , NonTargetResponse_col , Status_response , col_status  ):
+
+    #dataframe: NTL
+    #NonTargetResponse : PD , PR , ...
+    #NonTargetResponse_col : NRGRESP
+    #Status_response : Absent , Present,..
+    #col_status : TUMSTATE_NT_1 , ....
+    
+    df_frame = pd.DataFrame(columns = dataframe.columns)
+    df_frame["DM_CMT"] = np.nan
+
+
+    # df_NTL의 컬럼으로 이루어진 빈 데이터프레임 생성
+    df_empty = pd.DataFrame(columns = dataframe.columns)
+    # DM코멘트 추가
+    # df_empty["DM_CMT"] = np.nan
+
+    #Non Target Status를 리스트로
+    for i in range(len(dataframe)):
+        if Status_response in list(dataframe.loc[i,col_status]):
+            if dataframe.loc[i , NonTargetResponse_col]!=NonTargetResponse:
+                df_empty = dataframe.loc[i ,:]
+                df_empty["DM_CMT"] = "Lesion Status가 {} 인데 , Response가 {}가 아닌 경우".format(Status_response , NonTargetResponse)
+
+                #행을 추가하면서 df_NTL_NTRGRESP_incorrect 에 저장
+                df_frame = df_frame.append(df_empty)
+
+    return df_frame
+    
+# Non Target Response PD 검토 함수
+# Status 중에서 하나라도 Unequivocal Progression 이면 출력
+# ex) NonTargetResponse_CR(df_NTL , "CR" , "NTRGRESP" , "Absent" , col_status=["TULSTAT_1" ,"TULSTAT_2" ,"TULSTAT_3" , "TULSTAT_4" , "TULSTAT_5"])
+def NonTargetResponse_CR(dataframe , NonTargetResponse , NonTargetResponse_col , Status_response , col_status  ):
+
+    #dataframe: NTL
+    #NonTargetResponse : PD , PR , ...
+    #NonTargetResponse_col : NRGRESP
+    #Status_response : Absent , Present,..
+    #col_status : TUMSTATE_NT_1 , ....
+    
+    df_frame = pd.DataFrame(columns = dataframe.columns)
+    df_frame["DM_CMT"] = np.nan
+
+
+    # df_NTL의 컬럼으로 이루어진 빈 데이터프레임 생성
+    df_empty = pd.DataFrame(columns = dataframe.columns)
+    # DM코멘트 추가
+    # df_empty["DM_CMT"] = np.nan
+
+    #Non Target Status를 리스트로
+    for i in range(len(dataframe)):
+
+        #nan제외한 status리스트 생성
+        status_list = list(dataframe.loc[i,col_status])
+        status_list = [z for z in status_list if pd.notnull(z)]
+
+
+        #status_list가 모두 nan인 경우는 제외하고 진행
+        if len(status_list)!=0:
+            #status 리스트에 있는 요소들이 모두 absent이면 진행
+            if all(Status_response ==x for x in status_list):
+
+                #모두 absent인데 CR이 아닌경우 출력
+                if dataframe.loc[i , NonTargetResponse_col]!=NonTargetResponse:
+                    df_empty = dataframe.loc[i ,:]
+                    df_empty["DM_CMT"] = "Lesion Status가 모두 {} 인데 , Response가 {}가 아닌 경우".format(Status_response , NonTargetResponse)
+
+                    #행을 추가하면서 df_NTL_NTRGRESP_incorrect 에 저장
+                    df_frame = df_frame.append(df_empty)
+
+    return df_frame
+    
+    
+    
+
+
+
 ###조정자 pick 오류 검토 함수
 #ADJ_PICK(df , "01S306" , "Baseline (1st scan)" , "ADJUDICATOR" , "Analyst#1" , "Analyst#2" , ["TRGOC_1","TRGOCOT_1","TRGLD_1"])
 # 1. raw_dataframe에서 해당 대상자의 baseline에서 columns를 기준으로 ADJ와 Analyst를 비교하여 ADJ가 누굴 택했는지 확인(인자 = ADJ_Pick_Analayst)
