@@ -37,7 +37,9 @@ def NonTargetResponse_PD(dataframe , NonTargetResponse , NonTargetResponse_col ,
                 df_frame = df_frame.append(df_empty)
 
     return df_frame
-    
+
+
+
 # Non Target Response PD 검토 함수
 # Status 중에서 하나라도 Unequivocal Progression 이면 출력
 # ex) NonTargetResponse_CR(df_NTL , "CR" , "NTRGRESP" , "Absent" , col_status=["TULSTAT_1" ,"TULSTAT_2" ,"TULSTAT_3" , "TULSTAT_4" , "TULSTAT_5"])
@@ -81,10 +83,6 @@ def NonTargetResponse_CR(dataframe , NonTargetResponse , NonTargetResponse_col ,
 
     return df_frame
     
-    
-    
-
-
 
 ###조정자 pick 오류 검토 함수
 #ADJ_PICK(df , "01S306" , "Baseline (1st scan)" , "ADJUDICATOR" , "Analyst#1" , "Analyst#2" , ["TRGOC_1","TRGOCOT_1","TRGLD_1"])
