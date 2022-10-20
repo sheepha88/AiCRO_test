@@ -185,7 +185,6 @@ def visit_extract(dataframe_batchlist , col ,  subjectNO ):
 # # Lesion(TRGOC)가 있는데, TRGOC, TRGOCOT가 둘 다 없는 경우
 # # Lesion(TRGOC)가 있는데, TRGOC 또는 TRGOCOT가  없는 경우
 
-# In[13]:
 
 
 #kwargs 의 value값은 and, or로 지정, ex) operator = and
@@ -521,7 +520,7 @@ def otherna(range1, range2, dataframe,*args, **kwargs):
             df_empty = pd.DataFrame( columns = new_list)
             df_append = pd.DataFrame( columns = new_list)
             for numlist in list_range:
-                df_empty = dataframe[(dataframe[args[0]+"_"+numlist].isin(["Other","Others"])) & ( (dataframe[args[1]+"_"+numlist].isnull()) & (dataframe[args[2]+"_"+numlist].isnull()) )]
+                df_empty = dataframe[(dataframe[args[0]+"_"+numlist].isin(["OTHER" , "Other","Others"])) & ( (dataframe[args[1]+"_"+numlist].isnull()) & (dataframe[args[2]+"_"+numlist].isnull()) )]
                 df_empty["DM_CMT"] = args[0]+"_"+numlist+"가 Other인데 "+args[1]+"_"+numlist+"이 없고,"+args[2]+"_"+numlist+"도 없는 경우"
                 df_append = df_append.append(df_empty)
                 
@@ -536,7 +535,7 @@ def otherna(range1, range2, dataframe,*args, **kwargs):
             df_append = pd.DataFrame( columns = new_list)
             for numlist in list_range:
                 #결과가 출력될 dataframe = df_NA : TRGOCSITE_1_NA
-                df_empty = dataframe[(dataframe[args[0]+"_"+numlist].isin(["Other","Others"]))  & ( dataframe[args[1]+"_"+numlist].isnull() )]
+                df_empty = dataframe[(dataframe[args[0]+"_"+numlist].isin(["OTHER", "Other","Others"]))  & ( dataframe[args[1]+"_"+numlist].isnull() )]
 
                 #value값(tumor길이)가 0인것은 제외 
                 df_empty = df_empty[df_empty[value+"_"+numlist]!=0]
@@ -549,7 +548,7 @@ def otherna(range1, range2, dataframe,*args, **kwargs):
             df_append = pd.DataFrame( columns = new_list)
             for numlist in list_range:
                 #결과가 출력될 dataframe = df_NA : TRGOCSITE_1_NA
-                df_empty = dataframe[(dataframe[args[0]+"_"+numlist].isin(["Other","Others"]))  & ( dataframe[args[1]+"_"+numlist].isnull() )]
+                df_empty = dataframe[(dataframe[args[0]+"_"+numlist].isin(["OTHER" , "Other","Others"]))  & ( dataframe[args[1]+"_"+numlist].isnull() )]
                 df_empty["DM_CMT"] = args[0]+"_"+numlist+"값이 Other인데,"+args[1]+numlist+"가 없는 경우"
                 df_append = df_append.append(df_empty)
     
@@ -581,7 +580,7 @@ def nothervalue(range1, range2, dataframe,*args, **kwargs):
             df_empty = pd.DataFrame( columns = new_list)
             df_append = pd.DataFrame( columns = new_list)
             for numlist in list_range:
-                df_empty = dataframe[(-dataframe[args[0]+"_"+numlist].isin(["Other","Others"]))  & ( dataframe[args[1]+"_"+numlist].notnull() )]
+                df_empty = dataframe[(-dataframe[args[0]+"_"+numlist].isin(["OTHER" , "Other","Others"]))  & ( dataframe[args[1]+"_"+numlist].notnull() )]
                 df_empty["DM_CMT"] = args[0]+"_"+numlist+"값이 Other가 아닌데,"+args[1]+numlist+"가 있는 경우"
                 df_append = df_append.append(df_empty)
     
@@ -591,7 +590,9 @@ def nothervalue(range1, range2, dataframe,*args, **kwargs):
 
 
 #TRGRESP 판별 알고리즘
-def TargetResponse(dataframe):
+# nadirper = nadir % 나타내는 컬럼
+# baselineper = baseline % 나타내는 컬럼
+def TargetResponse(dataframe , nadirper , baselineper):
     #dataframe index 재정렬
     dataframe = dataframe.reset_index(drop=True)
     
@@ -599,7 +600,7 @@ def TargetResponse(dataframe):
     for i in list(range(len(dataframe))):
         
         #PCNSLD가 20%보다 크고, 차이가 5보다 크면, PD
-        if dataframe.loc[i,"PCNSLD"]>=20:
+        if dataframe.loc[i,nadirper]>=20:
             if dataframe.loc[i,"ABS"]>=5:
                 dataframe.loc[i,"TRGRESP_YJW"]="PD"
             
@@ -607,10 +608,10 @@ def TargetResponse(dataframe):
             elif dataframe.loc[i,"ABS"]<5:
                 dataframe.loc[i,"TRGRESP_YJW"]="SD"
             
-        elif -100<dataframe.loc[i,"PCBSLD"]<=-30:
+        elif -100<dataframe.loc[i,baselineper]<=-30:
             dataframe.loc[i,"TRGRESP_YJW"]="PR"
             
-        elif dataframe.loc[i,"PCBSLD"]<=-100:
+        elif dataframe.loc[i,baselineper]<=-100:
             dataframe.loc[i,"TRGRESP_YJW"]="CR"
             
         else:
@@ -618,25 +619,25 @@ def TargetResponse(dataframe):
             
             
     #VISIT 이 screening 이면 TRGRESP 값이 NA 이다.
-    dataframe["TRGRESP_YJW"][dataframe["VISIT"].isin(["Baseline","BL"])]=np.nan
+    dataframe["TRGRESP_YJW"][dataframe["VISIT"].isin(["Baseline","BL" , "Screening"])]=np.nan
     
     return dataframe
 
 
 
-def TargetResponse_YN(dataframe):
+def TargetResponse_YN(dataframe , TargetResponsecol):
     
     #판독자와 알고리즘 결과값이 다른 경우 표시       
     for i in list(range(len(dataframe))):
-        if dataframe.loc[i, "TRGRESP"] != dataframe.loc[i, "TRGRESP_YJW"]:
+        if dataframe.loc[i, TargetResponsecol] != dataframe.loc[i, "TRGRESP_YJW"]:
             dataframe.loc[i,"YN"] = "N"
             
-        if (pd.isnull(dataframe.loc[i, "TRGRESP"])) & (pd.isnull(dataframe.loc[i, "TRGRESP_YJW"])):
+        if (pd.isnull(dataframe.loc[i, TargetResponsecol])) & (pd.isnull(dataframe.loc[i, "TRGRESP_YJW"])):
             dataframe.loc[i,"YN"] = "Y"
             
 
 
-        if dataframe.loc[i, "TRGRESP"] == dataframe.loc[i, "TRGRESP_YJW"]:
+        if dataframe.loc[i, TargetResponsecol] == dataframe.loc[i, "TRGRESP_YJW"]:
             dataframe.loc[i,"YN"] = "Y"
                 
     return dataframe
