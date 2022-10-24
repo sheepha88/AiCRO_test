@@ -6,6 +6,31 @@ import openpyxl
 warnings.filterwarnings("ignore")
 
 
+
+# Status가 Present이면 반드시 Non-CR/Non-PD 여아한다.
+# Non target 에서 present인데 Non CR Non PD가 아닌 경우를 검토하는 함수  
+#  Status가 Present이면 반드시 Non-CR/Non-PD 여아한다. // col_status를 각각 순회하여 Present인데 Non CR Non PD인지 검토 
+# ex) NonTargetResponse(df_NTL , "Non-CR/Non-PD" , "NTRGRESP" , "Present" , col_status=["TUMSTATE_NT_1" ,"TUMSTATE_NT_2" ,"TUMSTATE_NT_3" , "TUMSTATE_NT_4" , "TUMSTATE_NT_5"])
+def NonTargetResponse_NonCR_NonPD(dataframe , NonTargetResponse , NonTargetResponse_col , Status_response , col_status ):
+
+    # DM_CMT 추가
+    df_frame = pd.DataFrame(columns = dataframe.columns)
+    df_frame["DM_CMT"] = np.nan
+
+
+    for i in range(len(dataframe)):
+        if Status_response in list(dataframe.loc[i,col_status]) and dataframe.loc[i , NonTargetResponse_col]!=NonTargetResponse:
+            df_empty = dataframe.loc[i ,:]
+
+            df_empty["DM_CMT"] = "Non-Target Lesion에서의 Status가 {} 인데 , Response가 {}가 아닌 경우".format(Status_response , NonTargetResponse)
+
+            #행을 추가하면서 df_NTL_NTRGRESP_incorrect 에 저장
+            df_frame = df_frame.append(df_empty)
+
+    return df_frame
+
+
+
 #Non Target Response PD 검토 함수
 # Status 중에서 하나라도 Unequivocal Progression 이면 출력
 # ex) NonTargetResponse(df_NTL , "PD" , "NTRGRESP" , "Unequivocal Progression" , col_status=["TULSTAT_1" ,"TULSTAT_2" ,"TULSTAT_3" , "TULSTAT_4" , "TULSTAT_5"])
@@ -185,7 +210,6 @@ def visit_extract(dataframe_batchlist , col ,  subjectNO ):
 # # Lesion(TRGOC)가 있는데, TRGOC, TRGOCOT가 둘 다 없는 경우
 # # Lesion(TRGOC)가 있는데, TRGOC 또는 TRGOCOT가  없는 경우
 
-# In[13]:
 
 
 #kwargs 의 value값은 and, or로 지정, ex) operator = and
@@ -521,7 +545,7 @@ def otherna(range1, range2, dataframe,*args, **kwargs):
             df_empty = pd.DataFrame( columns = new_list)
             df_append = pd.DataFrame( columns = new_list)
             for numlist in list_range:
-                df_empty = dataframe[(dataframe[args[0]+"_"+numlist].isin(["Other","Others"])) & ( (dataframe[args[1]+"_"+numlist].isnull()) & (dataframe[args[2]+"_"+numlist].isnull()) )]
+                df_empty = dataframe[(dataframe[args[0]+"_"+numlist].isin(["OTHER" , "Other","Others"])) & ( (dataframe[args[1]+"_"+numlist].isnull()) & (dataframe[args[2]+"_"+numlist].isnull()) )]
                 df_empty["DM_CMT"] = args[0]+"_"+numlist+"가 Other인데 "+args[1]+"_"+numlist+"이 없고,"+args[2]+"_"+numlist+"도 없는 경우"
                 df_append = df_append.append(df_empty)
                 
@@ -536,7 +560,7 @@ def otherna(range1, range2, dataframe,*args, **kwargs):
             df_append = pd.DataFrame( columns = new_list)
             for numlist in list_range:
                 #결과가 출력될 dataframe = df_NA : TRGOCSITE_1_NA
-                df_empty = dataframe[(dataframe[args[0]+"_"+numlist].isin(["Other","Others"]))  & ( dataframe[args[1]+"_"+numlist].isnull() )]
+                df_empty = dataframe[(dataframe[args[0]+"_"+numlist].isin(["OTHER", "Other","Others"]))  & ( dataframe[args[1]+"_"+numlist].isnull() )]
 
                 #value값(tumor길이)가 0인것은 제외 
                 df_empty = df_empty[df_empty[value+"_"+numlist]!=0]
@@ -549,7 +573,7 @@ def otherna(range1, range2, dataframe,*args, **kwargs):
             df_append = pd.DataFrame( columns = new_list)
             for numlist in list_range:
                 #결과가 출력될 dataframe = df_NA : TRGOCSITE_1_NA
-                df_empty = dataframe[(dataframe[args[0]+"_"+numlist].isin(["Other","Others"]))  & ( dataframe[args[1]+"_"+numlist].isnull() )]
+                df_empty = dataframe[(dataframe[args[0]+"_"+numlist].isin(["OTHER" , "Other","Others"]))  & ( dataframe[args[1]+"_"+numlist].isnull() )]
                 df_empty["DM_CMT"] = args[0]+"_"+numlist+"값이 Other인데,"+args[1]+numlist+"가 없는 경우"
                 df_append = df_append.append(df_empty)
     
@@ -581,7 +605,7 @@ def nothervalue(range1, range2, dataframe,*args, **kwargs):
             df_empty = pd.DataFrame( columns = new_list)
             df_append = pd.DataFrame( columns = new_list)
             for numlist in list_range:
-                df_empty = dataframe[(-dataframe[args[0]+"_"+numlist].isin(["Other","Others"]))  & ( dataframe[args[1]+"_"+numlist].notnull() )]
+                df_empty = dataframe[(-dataframe[args[0]+"_"+numlist].isin(["OTHER" , "Other","Others"]))  & ( dataframe[args[1]+"_"+numlist].notnull() )]
                 df_empty["DM_CMT"] = args[0]+"_"+numlist+"값이 Other가 아닌데,"+args[1]+numlist+"가 있는 경우"
                 df_append = df_append.append(df_empty)
     
@@ -591,7 +615,9 @@ def nothervalue(range1, range2, dataframe,*args, **kwargs):
 
 
 #TRGRESP 판별 알고리즘
-def TargetResponse(dataframe):
+# nadirper = nadir % 나타내는 컬럼
+# baselineper = baseline % 나타내는 컬럼
+def TargetResponse(dataframe , nadirper , baselineper):
     #dataframe index 재정렬
     dataframe = dataframe.reset_index(drop=True)
     
@@ -599,7 +625,7 @@ def TargetResponse(dataframe):
     for i in list(range(len(dataframe))):
         
         #PCNSLD가 20%보다 크고, 차이가 5보다 크면, PD
-        if dataframe.loc[i,"PCNSLD"]>=20:
+        if dataframe.loc[i,nadirper]>=20:
             if dataframe.loc[i,"ABS"]>=5:
                 dataframe.loc[i,"TRGRESP_YJW"]="PD"
             
@@ -607,10 +633,10 @@ def TargetResponse(dataframe):
             elif dataframe.loc[i,"ABS"]<5:
                 dataframe.loc[i,"TRGRESP_YJW"]="SD"
             
-        elif -100<dataframe.loc[i,"PCBSLD"]<=-30:
+        elif -100<dataframe.loc[i,baselineper]<=-30:
             dataframe.loc[i,"TRGRESP_YJW"]="PR"
             
-        elif dataframe.loc[i,"PCBSLD"]<=-100:
+        elif dataframe.loc[i,baselineper]<=-100:
             dataframe.loc[i,"TRGRESP_YJW"]="CR"
             
         else:
@@ -618,25 +644,25 @@ def TargetResponse(dataframe):
             
             
     #VISIT 이 screening 이면 TRGRESP 값이 NA 이다.
-    dataframe["TRGRESP_YJW"][dataframe["VISIT"].isin(["Baseline","BL"])]=np.nan
+    dataframe["TRGRESP_YJW"][dataframe["VISIT"].isin(["Baseline","BL" , "Screening"])]=np.nan
     
     return dataframe
 
 
 
-def TargetResponse_YN(dataframe):
+def TargetResponse_YN(dataframe , TargetResponsecol):
     
     #판독자와 알고리즘 결과값이 다른 경우 표시       
     for i in list(range(len(dataframe))):
-        if dataframe.loc[i, "TRGRESP"] != dataframe.loc[i, "TRGRESP_YJW"]:
+        if dataframe.loc[i, TargetResponsecol] != dataframe.loc[i, "TRGRESP_YJW"]:
             dataframe.loc[i,"YN"] = "N"
             
-        if (pd.isnull(dataframe.loc[i, "TRGRESP"])) & (pd.isnull(dataframe.loc[i, "TRGRESP_YJW"])):
+        if (pd.isnull(dataframe.loc[i, TargetResponsecol])) & (pd.isnull(dataframe.loc[i, "TRGRESP_YJW"])):
             dataframe.loc[i,"YN"] = "Y"
             
 
 
-        if dataframe.loc[i, "TRGRESP"] == dataframe.loc[i, "TRGRESP_YJW"]:
+        if dataframe.loc[i, TargetResponsecol] == dataframe.loc[i, "TRGRESP_YJW"]:
             dataframe.loc[i,"YN"] = "Y"
                 
     return dataframe
@@ -708,3 +734,59 @@ def OverallResponse(dataframe):
         
     return dataframe
         
+
+
+# Modality와 Scan Type에 따라 Date가 잘 입력 되었는가  ( Incorrect Check )
+# ex) CT SCAN , chest 이면 영상촬영일자의 CT-Chest Date와 동일 및 데이터를 가져와야한다.
+
+
+def ScanDataCheck(dataframe):
+    result_dataframe = pd.dataframe(coloums=dataframe.columns)
+    result_dataframe['DM_CMT']=np.nan
+    # TUMETHOD_NT_i : CT,MRI,Other  , TUIMG_NT_i : Chest,Abdomen/Pelvis,Other , TUDTC_NT_i , 
+    for i in range(len(dataframe)):
+        for j in range(1,6):
+            modality = "TUMETHOD_NT_"+str(j)
+            scan_type = "TUIMG_NT_"+str(j)
+            scan_date = "TUDTC_NT_"+str(j)
+            if (dataframe.loc[i,modality]!=None and dataframe.loc[i,scan_type]!=None):
+                if dataframe.loc[i,scan_date] == None:
+                    new_line=dataframe.loc[i,:]
+                    new_line["DM_CMT"] = "Scan Type 날짜를 불러오지 못한 경우 Non-Target Lession {}번째".format(j)
+                    result_dataframe.append(new_line)
+                # 아래는 옵션을 잘못 선택하여 당연히 없는 경우
+                else:
+                    original_type = "TUDTC_"
+                    if not dataframe.loc[i,modality] in ["CT","MRI"]:
+                        original_type+="OT_OT"
+                    else:
+                        if dataframe.loc[i,modality]=="CT_":
+                            original_type+="CT"
+                        else:
+                            original_type+="MRI_"
+
+                        if dataframe.loc[i,scan_type]=="Chest":
+                            original_type+="CHEST"
+                        elif dataframe.loc[i,scan_type]=="Abdomen/Pelvis":
+                            original_type+="ABD"
+                        else:
+                            original_type+="OT"
+                    
+                    if dataframe.loc[i,original_type]==None:
+                        new_line=dataframe.loc[i,:]
+                        new_line["DM_CMT"] = "옵션을 잘못 선택해서 날짜 값이 없는 타입을 선택한 경우 Non-Target Lession {}번째".format(j)
+                        result_dataframe.append(new_line)
+                
+    return result_dataframe      
+
+
+
+
+# YYYY-MM-DD 형식이 아니면 메세지 출력 ( JS는 AiCRO DVS로 옯길 것 )
+
+# date=ITEM.getValue("컬럼이름")
+
+# const date_Check = /\d{4}-\d{2}-\d{2}/;
+# if (date !== Null && !date_Check.test(date)){
+#   // 알림 내용
+# }
