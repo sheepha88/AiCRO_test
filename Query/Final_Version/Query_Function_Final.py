@@ -5,7 +5,7 @@ import warnings
 import openpyxl
 warnings.filterwarnings("ignore")
 
-
+# 내일은 출국하는 날입니다.
 
 # Status가 Present이면 반드시 Non-CR/Non-PD 여아한다.     2022-10-25
 # Non target 에서 present인데 Non CR Non PD가 아닌 경우를 검토하는 함수  
