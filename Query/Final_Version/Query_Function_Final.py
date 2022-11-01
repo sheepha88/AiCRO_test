@@ -678,66 +678,84 @@ def TargetResponse_YN(dataframe , TargetResponsecol):
 #------------------------------------------
 # Overall Response logic
 
-def OverallResponse(dataframe):
+def OverallResponse(dataframe ,TRGIND, TRGRESP , NTRGRESP , NEWLIND ):
     for i in list(range(len(dataframe))):
-        if dataframe.loc[i,"TRGIND"]=="Yes":                    
-            if dataframe.loc[i,"TRGRESP"]=="PD":
+        if dataframe.loc[i,TRGIND]=="Yes":                    
+            if dataframe.loc[i,TRGRESP]=="PD":
                 dataframe.loc[i,"OVRESP_YJW"]="PD"
             
-            elif dataframe.loc[i,"NTRGRESP"]=="PD":
+            elif dataframe.loc[i,NTRGRESP]=="PD":
                 dataframe.loc[i,"OVRESP_YJW"]="PD"
                 
-            elif dataframe.loc[i,"NEWLIND"]=="Yes":
+            elif dataframe.loc[i,NEWLIND]=="Yes":
                 dataframe.loc[i,"OVRESP_YJW"]="PD"
                 
                 
-            elif dataframe.loc[i,"TRGRESP"]=="CR":
-                if dataframe.loc[i,"NTRGRESP"]=="CR":
-                    if dataframe.loc[i,"NEWLIND"]=="No":
+            elif dataframe.loc[i,TRGRESP]=="CR":
+                if dataframe.loc[i,NTRGRESP]=="CR":
+                    if dataframe.loc[i,NEWLIND]=="No":
                         dataframe.loc[i,"OVRESP_YJW"]="CR"
                         
-                elif dataframe.loc[i,"NTRGRESP"] in ["CR","Non-CR/Non-PD","Not evaluable","NE"]:
-                    if dataframe.loc[i,"NEWLIND"]=="No":
+                elif dataframe.loc[i,NTRGRESP] in ["CR","Non-CR/Non-PD","Not evaluable","NE"]:
+                    if dataframe.loc[i,NEWLIND]=="No":
                         dataframe.loc[i,"OVRESP_YJW"]="PR"
                         
-            elif dataframe.loc[i,"TRGRESP"]=="PR":
-                if dataframe.loc[i,"NTRGRESP"] in ["CR","Non-CR/Non-PD","Not evaluable","NE"]:
-                    if dataframe.loc[i,"NEWLIND"]=="No":
+            elif dataframe.loc[i,TRGRESP]=="PR":
+                if dataframe.loc[i,NTRGRESP] in ["CR","Non-CR/Non-PD","Not evaluable","NE"]:
+                    if dataframe.loc[i,NEWLIND]=="No":
                         dataframe.loc[i,"OVRESP_YJW"]="PR"
                         
-            elif dataframe.loc[i,"TRGRESP"]=="SD":
-                if dataframe.loc[i,"NTRGRESP"] in ["CR","Non-CR/Non-PD","Not evaluable","NE"]:
-                        if dataframe.loc[i,"NEWLIND"]=="No":
+            elif dataframe.loc[i,TRGRESP]=="SD":
+                if dataframe.loc[i,NTRGRESP] in ["CR","Non-CR/Non-PD","Not evaluable","NE"]:
+                        if dataframe.loc[i,NEWLIND]=="No":
                             dataframe.loc[i,"OVRESP_YJW"]="SD"
                         
-            elif dataframe.loc[i,"TRGRESP"] in ["Not Evaluable","NE"]:
-                if dataframe.loc[i,"NTRGRESP"] == "Non-CR/Non-PD":
-                    if dataframe.loc[i,"NEWLIND"]=="No":
+            elif dataframe.loc[i,TRGRESP] in ["Not Evaluable","NE"]:
+                if dataframe.loc[i,NTRGRESP] == "Non-CR/Non-PD":
+                    if dataframe.loc[i,NEWLIND]=="No":
                         dataframe.loc[i,"OVRESP_YJW"]="NE"
                     
-        elif dataframe.loc[i,"TRGIND"]=="No":
-            if dataframe.loc[i,"NTRGRESP"]=="CR":
-                if dataframe.loc[i,"NEWLIND"]=="No":
+        elif dataframe.loc[i,TRGIND]=="No":
+            if dataframe.loc[i,NTRGRESP]=="CR":
+                if dataframe.loc[i,NEWLIND]=="No":
                     dataframe.loc[i,"OVRESP_YJW"]="CR"
                     
-            elif dataframe.loc[i,"NTRGRESP"]=="Non-CR/Non-PD":
-                if dataframe.loc[i,"NEWLIND"]=="No":
+            elif dataframe.loc[i,NTRGRESP]=="Non-CR/Non-PD":
+                if dataframe.loc[i,NEWLIND]=="No":
                     dataframe.loc[i,"OVRESP_YJW"]="non-CR/non-PD"
                     
-            elif dataframe.loc[i,"NTRGRESP"] in ["Not evaluable","NE"]:
-                if dataframe.loc[i,"NEWLIND"]=="No":
+            elif dataframe.loc[i,NTRGRESP] in ["Not evaluable","NE"]:
+                if dataframe.loc[i,NEWLIND]=="No":
                     dataframe.loc[i,"OVRESP_YJW"]="NE"
                     
-            elif dataframe.loc[i,"NTRGRESP"]=="PD":
+            elif dataframe.loc[i,NTRGRESP]=="PD":
                 dataframe.loc[i,"OVRESP_YJW"]="PD"
                 
-            if dataframe.loc[i,"NEWLIND"]=="Yes":
+            if dataframe.loc[i,NEWLIND]=="Yes":
                 dataframe.loc[i,"OVRESP_YJW"]="PD"
         
 
         else:
             dataframe.loc[i,"OVRESP_YJW"]=np.nan
         
+    return dataframe
+
+
+def OverallResponse_YN(dataframe , OverallResponsecol):
+    
+    #판독자와 알고리즘 결과값이 다른 경우 표시       
+    for i in list(range(len(dataframe))):
+        if dataframe.loc[i, OverallResponsecol] != dataframe.loc[i, "OVRESP_YJW"]:
+            dataframe.loc[i,"YN"] = "N"
+            
+        if (pd.isnull(dataframe.loc[i, OverallResponsecol])) & (pd.isnull(dataframe.loc[i, "OVRESP_YJW"])):
+            dataframe.loc[i,"YN"] = "Y"
+            
+
+
+        if dataframe.loc[i, OverallResponsecol] == dataframe.loc[i, "OVRESP_YJW"]:
+            dataframe.loc[i,"YN"] = "Y"
+                
     return dataframe
         
 
